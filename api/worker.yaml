@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: sfa-api
+  name: api-worker
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: sfa-api
+      what: api-worker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sfa-api
+        what: api-worker
+    spec:
+      containers:
+      - command:
+          - /opt/app-root/bin/sfa-api
+          - worker
+          - --job-monitoring-interval
+          - "660"
+          - --worker-ttl
+          - "720"
+          - /redis/redis-config.py
+        env:
+        # important for orca config
+        - name: HOME
+          value: /opt/app-root/
+        image: quay.io/solararbiter/solarforecastarbiter-api:latest
+        imagePullPolicy: IfNotPresent
+        name: rqworker
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /redis
+          name: redis-config
+        - mountPath: /opt/app-root/.plotly
+          name: orca-config
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: redis-config
+        secret:
+          defaultMode: 420
+          secretName: sfa-api-redis-config
+      - name: orca-config
+        configMap:
+          name: orca-config

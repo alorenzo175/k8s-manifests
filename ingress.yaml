@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: test-arbiter
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: 'HTTPS'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-west-2:603660783756:certificate/2f88b324-4f39-47be-970c-a9f024d57e3e"
+spec:
+  rules:
+  - host: "aws-api.solarforecastarbiter.org"
+    http:
+      paths:
+      - path: /*
+        backend:
+          serviceName: sfa-api
+          servicePort: 8080
+  - host: "aws-dashboard.solarforecastarbiter.org"
+    http:
+      paths:
+      - path: /*
+        backend:
+          serviceName: sfa-dash
+          servicePort: 8080

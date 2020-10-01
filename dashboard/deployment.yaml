@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 1
+  labels:
+    app: sfa-dash
+  name: sfa-dash
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sfa-dash
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: sfa-dash
+    spec:
+      initContainers:
+      - name: setupgpg
+        image: quay.io/solararbiter/solarforecastarbiter-dashboard:latest
+        env:
+        - name: GNUPGHOME
+          value: /gpghome
+        command:
+          - sh
+          - -c
+          - "gpg --batch --passphrase-file /gpg/passphrase.txt --import /gpg/key.gpg && cp /gpg/passphrase.txt /gpghome/."
+        volumeMounts:
+        - mountPath: /gpg
+          name: gpg
+        - mountPath: /gpghome
+          name: gpghome
+      containers:
+      - command:
+          - sh
+          - -c
+          - gunicorn "$APP_MODULE" --bind=0.0.0.0:8080 --access-logfile=- --config "$APP_CONFIG"
+        env:
+        - name: prometheus_multiproc_dir
+          value: /metrics
+        - name: APP_MODULE
+          value: "sfa_dash:aws_app"
+        - name: APP_CONFIG
+          value: /opt/app-root/src/gunicorn_config.py
+        - name: GNUPGHOME
+          value: /gpg
+        - name: GPG_PASSPHRASE_FILE
+          value: /gpg/passphrase.txt
+        - name: GPG_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: gpg-key-id
+              name: sfa-dash-gpg-secret
+        - name: FLASK_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: flask-secret-key
+              name: sfa-dash-secret-config
+        - name: AUTH0_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: auth0-client-id
+              name: sfa-dash-secret-config
+        - name: AUTH0_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: auth0-client-secret
+              name: sfa-dash-secret-config
+        - name: SQLALCHEMY_DATABASE_URI
+          valueFrom:
+            secretKeyRef:
+              key: mysql-secret
+              name: sfa-dash-secret-config
+        name: sfa-dash
+        image: quay.io/solararbiter/solarforecastarbiter-dashboard:latest
+        readinessProbe:
+          httpGet:
+            scheme: 'HTTPS'
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 15
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8081
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/terminal-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /gpg
+          name: gpghome
+        - mountPath: /metrics
+          name: metrics
+        - mountPath: /certs
+          name: cert-secret
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: gpg
+        secret:
+          secretName: sfa-dash-gpg-secret
+      - name: gpghome
+        emptyDir: {}
+      - name: metrics
+        emptyDir: {}
+      - name: cert-secret
+        secret:
+          defaultMode: 420
+          secretName: dash-cert

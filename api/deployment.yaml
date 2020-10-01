@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: sfa-api
+    what: mainapi
+  name: sfa-api
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: sfa-api
+      what: mainapi
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: sfa-api
+        what: mainapi
+    spec:
+      containers:
+      - name: sfa-api
+        command:
+          - sh
+          - -c
+          - gunicorn "$APP_MODULE" --bind=0.0.0.0:8080 --access-logfile=- --config "$APP_CONFIG"
+        env:
+        - name: REDOC_VERSION
+          value: 'next'
+        - name: prometheus_multiproc_dir
+          value: /tmp
+        - name: APP_MODULE
+          value: sfa_api:app_with_metrics
+        - name: APP_CONFIG
+          value: /opt/app-root/src/gunicorn_config.py
+        - name: REDIS_SETTINGS
+          value: '/redis/redis-config.py'
+        envFrom:
+          - secretRef:
+              name: sfa-api-mysql-config
+          - secretRef:
+              name: sfa-api-secrets
+        image: quay.io/solararbiter/solarforecastarbiter-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        readinessProbe:
+          httpGet:
+            scheme: 'HTTPS'
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 15
+        resources:
+          requests:
+            memory: 1Gi
+          limits:
+            memory: 2Gi
+        volumeMounts:
+        - mountPath: /redis
+          name: redis-config
+        - mountPath: /certs
+          name: cert
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: redis-config
+        secret:
+          defaultMode: 420
+          secretName: sfa-api-redis-config
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: api-cert

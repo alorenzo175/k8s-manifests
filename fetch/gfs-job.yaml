@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: fetch-nwp
+    model: gfs_0p25
+  name: fetch-nwp-gfs
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: fetch-nwp
+      model: gfs_0p25
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: fetch-nwp
+        model: gfs_0p25
+    spec:
+      containers:
+      - image: quay.io/solararbiter/solarforecastarbiter-core:latest
+        imagePullPolicy: Always
+        name: fetch-nwp
+        env:
+          - name: HDF5_USE_FILE_LOCKING
+            value: 'FALSE'
+        command:
+          - sh
+          - -c
+          - "solararbiter fetchnwp -v /data gfs_0p25"
+        resources:
+          limits:
+            memory: 5Gi
+          requests:
+            cpu: 100m
+            memory: 400Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /data
+          name: writeable
+        - mountPath: "/data/gfs_0p25"
+          name: forecasts
+          subPath: gfs
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext:
+        runAsGroup: 0
+        runAsUser: 0
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: writeable
+        emptyDir: {}
+      - name: forecasts
+        persistentVolumeClaim:
+          claimName: nwp-forecasts

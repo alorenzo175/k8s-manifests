@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: sfa-api
+  name: orca
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      what: orca
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: sfa-api
+        what: orca
+    spec:
+      containers:
+      - image: quay.io/plotly/image-exporter:v1.3.1
+        imagePullPolicy: IfNotPresent
+        name: orca
+        args:
+          - "--plotlyJS"
+          - "https://plot.ly/static/plotlyjs/build/plotlyjs-bundle.js"
+          - "--port"
+          - "9091"
+          - "--graph-only"
+          - "--window-max-number"
+          - "100"
+        env:
+          - name: PLOTLY_IMAGESERVER_ENABLE_MONIT
+            value: "false"
+        resources:
+         limits:
+           memory: 2396Mi
+         requests:
+           cpu: 100m
+           memory: 1Gi
+        ports:
+        - name: http-server
+          containerPort: 9091
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /var/run/xvfb.pid
+          failureThreshold: 1
+          initialDelaySeconds: 20
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      restartPolicy: Always
+      securityContext:
+        runAsUser: 0
+      # serviceAccountName: orca
+      terminationGracePeriodSeconds: 120

@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+commonLabels:
+  app: sfa-dash
+
+resources:
+- gpg-secret.yaml
+- secret.yaml
+- service-cert.yaml
+- deployment.yaml
+- service.yaml
+
+images:
+  - name: quay.io/solararbiter/solarforecastarbiter-dashboard
+    digest: sha256:5da2f3ff3411c4b6d82e95d12abeaff27c794a2a5649fff005f8ed1e15f86724

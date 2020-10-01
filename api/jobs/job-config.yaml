@@ -1,0 +1,9 @@
+apiVersion: 'kubernetes-client.io/v1'
+kind: ExternalSecret
+metadata:
+  name: sfa-api-job-config
+spec:
+  backendType: systemManager
+  data:
+    - key: /externalsecrets/api/job_config
+      name: job-config.py

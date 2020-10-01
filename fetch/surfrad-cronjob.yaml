@@ -1,0 +1,32 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: surfrad-data
+  labels:
+    app: reference-data
+spec:
+  schedule: '30 01 * * *'
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          containers:
+            - name: update-data
+              image: quay.io/solararbiter/solarforecastarbiter-core:latest
+              command:
+                - sh
+                - -c
+                - solararbiter referencedata update -v --base-url=https://aws-api.solarforecastarbiter.org --network "NOAA SURFRAD" --end $(date -d "$today 2" -uIs)
+              env:
+                - name: SFA_API_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: api-user
+                      name: reference-data
+                - name: SFA_API_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: api-password
+                      name: reference-data
+          restartPolicy: Never
