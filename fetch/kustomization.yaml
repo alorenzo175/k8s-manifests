@@ -3,6 +3,7 @@ kind: Kustomization
 
 bases:
 - gfs_0p25
+- nam_12km
 - surfrad
 
 resources:

@@ -3,12 +3,3 @@ kind: Kustomization
 
 resources:
   - job.yaml
-
-vars:
-  - name: NWP_NAME
-    objref:
-      kind: Deployment
-      name: fetch-nwp
-      apiVersion: apps/v1
-    fieldref:
-      fieldpath: metadata.labels.model

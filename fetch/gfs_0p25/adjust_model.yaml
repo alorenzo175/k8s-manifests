@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fetch-nwp
+spec:
+  template:
+    spec:
+      containers:
+        - name: fetch-nwp
+          env:
+            - name: NWP_NAME
+              value: gfs_0p25

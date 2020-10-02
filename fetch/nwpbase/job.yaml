@@ -24,10 +24,12 @@ spec:
         env:
           - name: HDF5_USE_FILE_LOCKING
             value: 'FALSE'
+          - name: NWP_NAME
+            value: ''
         command:
           - sh
           - -c
-          - "solararbiter fetchnwp -v /data $(NWP_NAME)"
+          - "solararbiter fetchnwp -v /data $NWP_NAME"
         resources:
           limits:
             memory: 5Gi
