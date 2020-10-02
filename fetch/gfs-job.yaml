@@ -44,7 +44,7 @@ spec:
           name: writeable
         - mountPath: "/data/gfs_0p25"
           name: forecasts
-          subPath: gfs
+          subPath: gfs_0p25
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       securityContext:

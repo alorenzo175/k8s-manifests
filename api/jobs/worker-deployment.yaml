@@ -49,7 +49,8 @@ spec:
       terminationGracePeriodSeconds: 120
       volumes:
       - name: data
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: nwp-forecasts
       - name: job-config
         secret:
           defaultMode: 420
