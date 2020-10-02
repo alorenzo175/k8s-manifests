@@ -1,11 +1,9 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: surfrad-data
-  labels:
-    app: reference-data
+  name: fetch-data
 spec:
-  schedule: '30 01 * * *'
+  schedule: ''
   jobTemplate:
     spec:
       backoffLimit: 1
@@ -17,7 +15,7 @@ spec:
               command:
                 - sh
                 - -c
-                - solararbiter referencedata update -v --base-url=https://aws-api.solarforecastarbiter.org --network "NOAA SURFRAD" --end $(date -d "$today 2" -uIs)
+                - solararbiter referencedata update -v --base-url=https://aws-api.solarforecastarbiter.org --network "$NETWORK" --end $(date -d "$today 2" -uIs)
               env:
                 - name: SFA_API_USER
                   valueFrom:
